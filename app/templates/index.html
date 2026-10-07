@@ -10,7 +10,16 @@
 </section>
 
 <section>
+  <form method="get" action="/" class="search">
+    <input type="search" name="q" value="{{ q }}" placeholder="Поиск по заметкам">
+    <button type="submit">Найти</button>
+    {% if q %}<a class="back" href="/">Сбросить</a>{% endif %}
+  </form>
+  {% if q %}
+  <h2 class="count">Найдено · {{ notes|length }}</h2>
+  {% else %}
   <h2 class="count">Все заметки · {{ notes|length }}</h2>
+  {% endif %}
   {% if notes %}
   <ul class="notes">
     {% for note in notes %}
@@ -22,7 +31,7 @@
     {% endfor %}
   </ul>
   {% else %}
-  <p class="empty">Заметок пока нет.</p>
+  <p class="empty">{% if q %}Ничего не найдено.{% else %}Заметок пока нет.{% endif %}</p>
   {% endif %}
 </section>
 {% endblock %}

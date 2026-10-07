@@ -45,3 +45,38 @@ def test_delete_note(client):
     client.post("/notes", data={"title": "Удалить меня", "body": ""})
     r = client.post("/notes/1/delete")
     assert "Удалить меня" not in r.text
+
+
+def test_search_by_title_and_body(client):
+    client.post("/notes", data={"title": "Покупки", "body": "Молоко"})
+    client.post("/notes", data={"title": "Работа", "body": "Отчёт"})
+    r = client.get("/", params={"q": "молоко"})
+    assert "Покупки" in r.text
+    assert "Работа" not in r.text
+    r = client.get("/", params={"q": "РАБ"})
+    assert "Работа" in r.text
+    assert "Покупки" not in r.text
+
+
+def test_search_special_chars_are_literal(client):
+    client.post("/notes", data={"title": "Скидка 50%", "body": ""})
+    client.post("/notes", data={"title": "Другое", "body": ""})
+    r = client.get("/", params={"q": "%"})
+    assert "Скидка 50%" in r.text
+    assert "Другое" not in r.text
+
+
+def test_search_nothing_found(client):
+    client.post("/notes", data={"title": "Покупки", "body": ""})
+    r = client.get("/", params={"q": "нет такого"})
+    assert "Ничего не найдено" in r.text
+    assert 'value="нет такого"' in r.text
+    assert "Сбросить" in r.text
+
+
+def test_blank_search_shows_all(client):
+    client.post("/notes", data={"title": "Покупки", "body": ""})
+    r = client.get("/", params={"q": "   "})
+    assert "Покупки" in r.text
+    assert "Все заметки" in r.text
+    assert "Сбросить" not in r.text

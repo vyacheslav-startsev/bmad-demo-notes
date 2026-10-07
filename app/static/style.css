@@ -58,6 +58,11 @@ button {
 button.danger { background: #dc2626; }
 
 .actions { display: flex; align-items: center; gap: 16px; }
+
+.search { flex-direction: row; align-items: center; margin-top: 28px; }
+.search input { flex: 1; min-width: 0; }
+.search button { align-self: auto; }
+.search + .count { margin-top: 16px; }
 .back { color: #57606a; }
 .delete { margin-top: 16px; }
 

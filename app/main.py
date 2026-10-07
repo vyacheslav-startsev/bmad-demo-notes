@@ -30,9 +30,11 @@ def clean(title: str, body: str) -> tuple[str, str]:
 
 
 @app.get("/", response_class=HTMLResponse)
-def index(request: Request):
+def index(request: Request, q: str = ""):
+    q = q.strip()
+    notes = db.search_notes(q) if q else db.list_notes()
     return templates.TemplateResponse(
-        request, "index.html", {"notes": db.list_notes()}
+        request, "index.html", {"notes": notes, "q": q}
     )
 
 

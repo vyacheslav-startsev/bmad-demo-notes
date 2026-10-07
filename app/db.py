@@ -39,6 +39,18 @@ def list_notes() -> list[sqlite3.Row]:
         ).fetchall()
 
 
+def search_notes(query: str) -> list[sqlite3.Row]:
+    # SQLite lower()/LIKE не понимают регистр кириллицы, поэтому сравниваем через casefold
+    with connect() as conn:
+        conn.create_function("fold", 1, lambda s: s.casefold(), deterministic=True)
+        return conn.execute(
+            "SELECT * FROM notes"
+            " WHERE instr(fold(title), ?) > 0 OR instr(fold(body), ?) > 0"
+            " ORDER BY updated_at DESC, id DESC",
+            (query.casefold(), query.casefold()),
+        ).fetchall()
+
+
 def get_note(note_id: int) -> sqlite3.Row | None:
     with connect() as conn:
         return conn.execute("SELECT * FROM notes WHERE id = ?", (note_id,)).fetchone()
