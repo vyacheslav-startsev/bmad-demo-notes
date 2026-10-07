@@ -100,7 +100,7 @@ def clean(title: str, body: str) -> tuple[str, str]:
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request, q: str = "", user: User = Depends(current_user)):
     q = q.strip()
-    notes = db.search_notes(q) if q else db.list_notes()
+    notes = db.search_notes(user["id"], q) if q else db.list_notes(user["id"])
     return templates.TemplateResponse(
         request, "index.html", {"notes": notes, "q": q, "user": user}
     )
@@ -111,13 +111,13 @@ def create(
     title: str = Form(...), body: str = Form(""), user: User = Depends(current_user)
 ):
     title, body = clean(title, body)
-    db.create_note(title, body)
+    db.create_note(title, body, owner_id=user["id"])
     return RedirectResponse("/", status_code=303)
 
 
 @app.get("/notes/{note_id}", response_class=HTMLResponse)
 def edit(request: Request, note_id: int, user: User = Depends(current_user)):
-    note = db.get_note(note_id)
+    note = db.get_note(note_id, user["id"])
     if note is None:
         raise HTTPException(status_code=404, detail="Заметка не найдена")
     return templates.TemplateResponse(request, "edit.html", {"note": note, "user": user})
@@ -130,14 +130,15 @@ def update(
     body: str = Form(""),
     user: User = Depends(current_user),
 ):
-    if db.get_note(note_id) is None:
+    if db.get_note(note_id, user["id"]) is None:
         raise HTTPException(status_code=404, detail="Заметка не найдена")
     title, body = clean(title, body)
-    db.update_note(note_id, title, body)
+    db.update_note(note_id, user["id"], title, body)
     return RedirectResponse("/", status_code=303)
 
 
 @app.post("/notes/{note_id}/delete")
 def delete(note_id: int, user: User = Depends(current_user)):
-    db.delete_note(note_id)
+    if not db.delete_note(note_id, user["id"]):
+        raise HTTPException(status_code=404, detail="Заметка не найдена")
     return RedirectResponse("/", status_code=303)
