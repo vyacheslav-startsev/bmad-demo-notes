@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card new">
+  <h2>Новая заметка</h2>
+  <form method="post" action="/notes">
+    <input name="title" placeholder="Заголовок" required>
+    <textarea name="body" rows="3" placeholder="Текст заметки"></textarea>
+    <button type="submit">Сохранить</button>
+  </form>
+</section>
+
+<section>
+  <h2 class="count">Все заметки · {{ notes|length }}</h2>
+  {% if notes %}
+  <ul class="notes">
+    {% for note in notes %}
+    <li class="card note">
+      <a class="note-title" href="/notes/{{ note.id }}">{{ note.title }}</a>
+      <p class="note-body">{{ note.body }}</p>
+      <span class="note-date">{{ note.updated_at[:10] }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">Заметок пока нет.</p>
+  {% endif %}
+</section>
+{% endblock %}

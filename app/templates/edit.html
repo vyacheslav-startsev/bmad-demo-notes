@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ note.title }} · Заметки{% endblock %}
+{% block content %}
+<section class="card">
+  <h2>Редактирование</h2>
+  <form method="post" action="/notes/{{ note.id }}">
+    <input name="title" value="{{ note.title }}" required>
+    <textarea name="body" rows="10">{{ note.body }}</textarea>
+    <div class="actions">
+      <button type="submit">Сохранить</button>
+      <a class="back" href="/">Отмена</a>
+    </div>
+  </form>
+  <form method="post" action="/notes/{{ note.id }}/delete" class="delete">
+    <button type="submit" class="danger">Удалить заметку</button>
+  </form>
+</section>
+{% endblock %}
