@@ -69,6 +69,23 @@ def get_user(user_id: int) -> sqlite3.Row | None:
         return conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
 
 
+def first_user_id() -> int | None:
+    """id первого зарегистрированного пользователя или None, если пользователей нет."""
+    with connect() as conn:
+        return conn.execute("SELECT MIN(id) FROM users").fetchone()[0]
+
+
+def claim_orphan_notes(user_id: int) -> int:
+    """Отдаёт заметки без владельца первому пользователю; другим — ничего. Возвращает число."""
+    with connect() as conn:
+        cur = conn.execute(
+            "UPDATE notes SET owner_id = ?"
+            " WHERE owner_id IS NULL AND ? = (SELECT MIN(id) FROM users)",
+            (user_id, user_id),
+        )
+        return cur.rowcount
+
+
 def list_notes(owner_id: int) -> list[sqlite3.Row]:
     with connect() as conn:
         return conn.execute(

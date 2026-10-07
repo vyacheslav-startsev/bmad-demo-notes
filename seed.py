@@ -22,12 +22,22 @@ NOTES = [
 
 def main() -> None:
     db.init_db()
+    # Заметки сида — первому пользователю, если он есть; иначе без владельца
+    owner = db.first_user_id()
     with db.connect() as conn:
-        conn.execute("DELETE FROM notes")
-        conn.execute("DELETE FROM sqlite_sequence WHERE name = 'notes'")
+        if owner is None:
+            conn.execute("DELETE FROM notes WHERE owner_id IS NULL")
+        else:
+            # Заметки без владельца тоже его: они перейдут к нему при входе
+            conn.execute(
+                "DELETE FROM notes WHERE owner_id = ? OR owner_id IS NULL", (owner,)
+            )
+        if conn.execute("SELECT count(*) FROM notes").fetchone()[0] == 0:
+            conn.execute("DELETE FROM sqlite_sequence WHERE name = 'notes'")
     for title, body, ts in NOTES:
-        db.create_note(title, body, created_at=ts)
-    print(f"Добавлено заметок: {len(NOTES)} в {db.db_path()}")
+        db.create_note(title, body, created_at=ts, owner_id=owner)
+    whose = "без владельца" if owner is None else f"пользователю {owner}"
+    print(f"Добавлено заметок: {len(NOTES)} ({whose}) в {db.db_path()}")
 
 
 if __name__ == "__main__":

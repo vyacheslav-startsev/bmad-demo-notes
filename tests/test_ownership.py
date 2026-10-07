@@ -184,3 +184,83 @@ def test_routes_use_note_id_not_user_id(login):
     r = client.post(f"/notes/{bob_nid}/delete")
     assert r.status_code == 200
     assert all_notes() == alice_rows
+
+
+@pytest.fixture
+def old_db(tmp_path):
+    """База со старой схемой и заметками без владельца, как рабочая notes.db.
+
+    Лежит по пути app_client и создаётся до его запуска (фикстура идёт первой).
+    """
+    path = tmp_path / "test.db"
+    with sqlite3.connect(path) as conn:
+        conn.execute(OLD_SCHEMA)
+        conn.executemany(
+            "INSERT INTO notes (id, title, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+            OLD_ROWS,
+        )
+    conn.close()
+    return path
+
+
+def owners() -> dict[str, int | None]:
+    with db.connect() as conn:
+        return {r["title"]: r["owner_id"] for r in conn.execute("SELECT title, owner_id FROM notes")}
+
+
+def test_old_notes_go_to_first_user(old_db, login):
+    client = login(1, "alice")
+    page = client.get("/").text
+    assert all(title in page for _, title, *_ in OLD_ROWS)
+    assert "Третья" in client.get("/", params={"q": "секрет"}).text
+    assert client.get("/notes/9").status_code == 200
+    assert set(owners().values()) == {user_id(1)}
+    assert all_notes() == OLD_ROWS
+
+    client = login(2, "bob")
+    page = client.get("/").text
+    assert "Заметок пока нет" in page
+    assert all(title not in page for _, title, *_ in OLD_ROWS)
+    assert client.get("/notes/9").status_code == 404
+
+
+def test_later_orphans_only_to_first_user(login):
+    login(1, "alice")
+    login(2, "bob")
+    db.create_note("Поздняя", "без владельца")
+    client = login(2, "bob")
+    assert "Поздняя" not in client.get("/").text
+    assert owners()["Поздняя"] is None
+    client = login(1, "alice")
+    assert "Поздняя" in client.get("/").text
+    assert owners()["Поздняя"] == user_id(1)
+
+
+def test_seed_without_users_writes_ownerless(app_client):
+    import seed
+
+    seed.main()
+    seed.main()
+    assert list(owners().values()) == [None] * len(seed.NOTES)
+
+
+def test_seed_writes_to_first_user_and_keeps_others(login):
+    import seed
+
+    client = login(1, "alice")
+    client.post("/notes", data={"title": "Старая Алисы", "body": ""})
+    client = login(2, "bob")
+    client.post("/notes", data={"title": "Боба", "body": "его текст"})
+    bob_before = [r for r in all_notes() if r[1] == "Боба"]
+    db.create_note("Ничья старая", "без владельца")
+
+    seed.main()
+
+    result = owners()
+    assert "Старая Алисы" not in result
+    assert "Ничья старая" not in result
+    assert [r for r in all_notes() if r[1] == "Боба"] == bob_before
+    assert result["Боба"] == user_id(2)
+    seed_titles = {title for title, _, _ in seed.NOTES}
+    assert {t for t, o in result.items() if o == user_id(1)} == seed_titles
+    assert "Список покупок" not in client.get("/").text

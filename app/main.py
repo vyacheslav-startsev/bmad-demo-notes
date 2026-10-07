@@ -79,6 +79,7 @@ def auth_callback(
     except auth.AuthError:
         return login_failed(request)
     user_id = db.upsert_user(profile["id"], profile["login"])
+    db.claim_orphan_notes(user_id)
     request.session.clear()
     request.session["user_id"] = user_id
     return RedirectResponse("/", status_code=303)
