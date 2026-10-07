@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Вход · Заметки{% endblock %}
+{% block content %}
+<section class="card login">
+  {% if error %}
+  <h2 class="login-error">Вход не удался</h2>
+  <p>GitHub не подтвердил вход. <a href="/login">Попробовать снова</a></p>
+  {% else %}
+  <h2>Вход</h2>
+  <p>Чтобы открыть заметки, войдите через GitHub.</p>
+  <a class="button" href="/auth/login">Войти через GitHub</a>
+  {% endif %}
+</section>
+{% endblock %}

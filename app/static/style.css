@@ -10,7 +10,22 @@ body {
 .top {
   background: #1f2328;
   padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
+
+.account { display: flex; align-items: center; gap: 12px; }
+.user-login { color: #d0d7de; font-size: 15px; }
+.logout button {
+  background: transparent;
+  border: 1px solid #57606a;
+  color: #fff;
+  padding: 4px 12px;
+  font-size: 15px;
+}
+.logout button:hover { border-color: #d0d7de; }
 
 .logo {
   color: #fff;
@@ -93,3 +108,16 @@ button.danger { background: #dc2626; }
 
 .note-date { font-size: 14px; color: #8c959f; }
 .empty { color: #57606a; }
+
+.login { max-width: 420px; margin: 48px auto 0; text-align: center; }
+.login p { color: #57606a; }
+.login-error { color: #dc2626; font-weight: 600; }
+.button {
+  display: inline-block;
+  padding: 9px 22px;
+  border-radius: 6px;
+  background: #1f2328;
+  color: #fff;
+  text-decoration: none;
+}
+.button:hover { background: #32383f; }

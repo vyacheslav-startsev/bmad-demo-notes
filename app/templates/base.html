@@ -9,6 +9,14 @@
 <body>
   <header class="top">
     <a class="logo" href="/">📝 Заметки</a>
+    {% if user %}
+    <div class="account">
+      <span class="user-login">{{ user.login }}</span>
+      <form method="post" action="/logout" class="logout">
+        <button type="submit">Выйти</button>
+      </form>
+    </div>
+    {% endif %}
   </header>
   <main>
     {% block content %}{% endblock %}

@@ -12,6 +12,15 @@ CREATE TABLE IF NOT EXISTS notes (
 )
 """
 
+USERS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    github_id INTEGER NOT NULL UNIQUE,
+    login TEXT NOT NULL,
+    created_at TEXT NOT NULL
+)
+"""
+
 
 def db_path() -> str:
     return os.environ.get("NOTES_DB", "notes.db")
@@ -26,10 +35,30 @@ def connect() -> sqlite3.Connection:
 def init_db() -> None:
     with connect() as conn:
         conn.execute(SCHEMA)
+        conn.execute(USERS_SCHEMA)
 
 
 def now() -> str:
     return datetime.now().isoformat(timespec="seconds")
+
+
+def upsert_user(github_id: int, login: str) -> int:
+    """Создаёт пользователя по GitHub id или обновляет его логин; возвращает users.id."""
+    with connect() as conn:
+        conn.execute(
+            "INSERT INTO users (github_id, login, created_at) VALUES (?, ?, ?)"
+            " ON CONFLICT(github_id) DO UPDATE SET login = excluded.login",
+            (github_id, login, now()),
+        )
+        row = conn.execute(
+            "SELECT id FROM users WHERE github_id = ?", (github_id,)
+        ).fetchone()
+        return row["id"]
+
+
+def get_user(user_id: int) -> sqlite3.Row | None:
+    with connect() as conn:
+        return conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
 
 
 def list_notes() -> list[sqlite3.Row]:
