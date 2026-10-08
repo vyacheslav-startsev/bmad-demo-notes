@@ -12,6 +12,28 @@
 седьмой версии (v7): к релизу отдельные команды и папки ещё могут поменяться.
 Состояние до установки BMAD помечено тегом `etalon`.
 
+## Переменные окружения
+
+После эпика вход идёт через GitHub, и без трёх переменных приложение не запустится.
+Их читают из окружения или из файла `.env` в корне проекта, сам `.env` в git не попадает.
+
+```bash
+GITHUB_CLIENT_ID=...        # Client ID вашего OAuth App на GitHub
+GITHUB_CLIENT_SECRET=...    # Client secret того же OAuth App
+SESSION_SECRET=...          # ключ подписи сессии, любая длинная случайная строка
+```
+
+OAuth App создаётся в GitHub: Settings → Developer settings → OAuth Apps → New OAuth App.
+В поле Homepage URL укажите `http://127.0.0.1:8000`, в поле Authorization callback URL
+укажите `http://127.0.0.1:8000/auth/callback`. Ключ сессии можно сгенерировать так:
+
+```bash
+uv run python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+Тестам переменные не нужны, они подставляют свои значения. Состояние до входа
+через GitHub работает без них: `git checkout a962470` (после задачи с поиском).
+
 ## Запуск
 
 ```bash
@@ -31,6 +53,7 @@ uv run pytest
 ## Устройство
 
 - `app/main.py`: маршруты
+- `app/auth.py`: вход через GitHub OAuth и настройки из окружения
 - `app/db.py`: работа с базой SQLite (путь задаёт `NOTES_DB`, по умолчанию `notes.db`)
 - `app/templates/`: страницы
 - `seed.py`: заполняет базу тестовыми заметками
